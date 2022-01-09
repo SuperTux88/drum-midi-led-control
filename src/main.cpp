@@ -1,11 +1,10 @@
 #include "Arduino.h"
 
-#include "midi.h"
-
-#define LED_PIN 5
+#include "midi/Midi.h"
+#include "Pins.h"
 
 void setup() {
-    setupMidi();
+    Midi::setup();
 
     pinMode(LED_PIN, OUTPUT);
 
@@ -13,5 +12,5 @@ void setup() {
 }
 
 void loop() {
-    readMidi();
+    Midi::read();
 }

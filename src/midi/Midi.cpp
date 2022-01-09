@@ -1,14 +1,13 @@
-#include "midi.h"
+#include "Midi.h"
+#include "Pins.h"
 
-#define MIDI_PIN 4
+#include <SoftwareSerial.h>
 
 #define DEBUG true
-#define DEBUG_PIN 2 // onboard LED
 
 SoftwareSerial midiSerial(MIDI_PIN);
 
-
-void setupMidi() {
+void Midi::setup() {
     pinMode(MIDI_PIN, INPUT);
     midiSerial.begin(31250);
 
@@ -20,7 +19,7 @@ byte channel;
 byte data[2];
 byte dataIndex = 0;
 
-void readMidi() {
+void Midi::read() {
     if (midiSerial.available() > 0) {
         byte message = midiSerial.read();
         if (message > 127) { // new command
@@ -65,7 +64,7 @@ void readMidi() {
     }
 }
 
-void printMidiCommand(String name, byte channel, byte data1, byte data2) {
+void Midi::printMidiCommand(String name, byte channel, byte data1, byte data2) {
     Serial.print(name);
     Serial.print(":\t");
     Serial.print(channel);
@@ -80,7 +79,7 @@ void printMidiCommand(String name, byte channel, byte data1, byte data2) {
     Serial.println();
 }
 
-void receiveNoteOn(byte note, byte velocity) {
+void Midi::receiveNoteOn(byte note, byte velocity) {
 #if DEBUG
     printMidiCommand("Note On", channel, note, velocity);
     digitalWrite(DEBUG_PIN, LOW);
@@ -88,7 +87,7 @@ void receiveNoteOn(byte note, byte velocity) {
 
 }
 
-void receiveNoteOff(byte note, byte velocity) {
+void Midi::receiveNoteOff(byte note, byte velocity) {
 #if DEBUG
     printMidiCommand("Note Off", channel, note, velocity);
     digitalWrite(DEBUG_PIN, HIGH);
@@ -96,21 +95,21 @@ void receiveNoteOff(byte note, byte velocity) {
 
 }
 
-void receivePressure(byte note, byte value) {
+void Midi::receivePressure(byte note, byte value) {
 #if DEBUG
     printMidiCommand("Pressure", channel, note, value);
 #endif
 
 }
 
-void receiveControlChange(byte control, byte value) {
+void Midi::receiveControlChange(byte control, byte value) {
 #if DEBUG
     printMidiCommand("Control", channel, control, value);
 #endif
 
 }
 
-void receiveProgramChange(byte program) {
+void Midi::receiveProgramChange(byte program) {
 #if DEBUG
     printMidiCommand("Program", channel, program, 0);
 #endif

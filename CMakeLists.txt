@@ -30,4 +30,4 @@ add_custom_target(
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_executable(Z_DUMMY_TARGET ${SRC_LIST} src/midi/Midi.cpp src/midi/Midi.h src/Pins.h)
+add_executable(Z_DUMMY_TARGET ${SRC_LIST} src/midi/Midi.cpp src/midi/Midi.h src/Pins.h src/midi/MidiMessages.cpp src/midi/MidiMessages.h)

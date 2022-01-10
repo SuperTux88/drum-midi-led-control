@@ -3,18 +3,22 @@
 
 #include <Arduino.h>
 
+#include <optional>
+#include <variant>
+
+#include "MidiMessages.h"
+
 class Midi {
 public:
     static void setup();
-    static void read();
+    static std::optional<std::variant<NoteOn, NoteOff, Pressure, ControlChange, ProgramChange>> read();
 
 private:
-    static void printMidiCommand(String name, byte channel, byte data1, byte data2);
-    static void receiveNoteOn(byte note, byte velocity);
-    static void receiveNoteOff(byte note, byte velocity);
-    static void receivePressure(byte note, byte value);
-    static void receiveControlChange(byte control, byte value);
-    static void receiveProgramChange(byte program);
+    static NoteOn receiveNoteOn(byte note, byte velocity);
+    static NoteOff receiveNoteOff(byte note, byte velocity);
+    static Pressure receivePressure(byte note, byte value);
+    static ControlChange receiveControlChange(byte control, byte value);
+    static ProgramChange receiveProgramChange(byte program);
 };
 
 #endif //DRUM_MIDI_LED_CONTROL_MIDI_H

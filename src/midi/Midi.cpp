@@ -19,8 +19,8 @@ byte channel;
 byte data[2];
 byte dataIndex = 0;
 
-void Midi::read() {
-    if (midiSerial.available() > 0) {
+std::optional<std::variant<NoteOn, NoteOff, Pressure, ControlChange, ProgramChange>> Midi::read() {
+    while (midiSerial.available() > 0) {
         byte message = midiSerial.read();
         if (message > 127) { // new command
             command = message >> 4;
@@ -31,87 +31,71 @@ void Midi::read() {
         }
         if (command == 8) {
             if (dataIndex == 2) {
-                receiveNoteOff(data[0], data[1]);
                 dataIndex = 0;
+                return receiveNoteOff(data[0], data[1]);
             }
         } else if (command == 9) {
             if (dataIndex == 2) {
-                receiveNoteOn(data[0], data[1]);
                 dataIndex = 0;
+                return receiveNoteOn(data[0], data[1]);
             }
         } else if (command == 10) {
             if (dataIndex == 2) {
-                receivePressure(data[0], data[1]);
                 dataIndex = 0;
+                return receivePressure(data[0], data[1]);
             }
         } else if (command == 11) {
             if (dataIndex == 2) {
-                receiveControlChange(data[0], data[1]);
                 dataIndex = 0;
+                return receiveControlChange(data[0], data[1]);
             }
         } else if (command == 12) {
             if (dataIndex == 1) {
-                receiveProgramChange(data[0] + 1);
                 dataIndex = 0;
+                return receiveProgramChange(data[0] + 1);
             }
         } else if (message != 254 && // ignore Active Sensing messages
                    message != 248) { // ignore Timing Clock messages
-            if (dataIndex == 0) {
-                printMidiCommand("Unknown", message, 0, 0);
-                dataIndex = 0;
-            }
+            dataIndex = 0;
+            Serial.printf("Unknown/Unexpected Message: %d\n", message);
         }
     }
+    return std::nullopt;
 }
 
-void Midi::printMidiCommand(String name, byte channel, byte data1, byte data2) {
-    Serial.print(name);
-    Serial.print(":\t");
-    Serial.print(channel);
-    if (dataIndex >= 1) {
-        Serial.print("\t");
-        Serial.print(data1);
-    }
-    if (dataIndex >= 2) {
-        Serial.print("\t");
-        Serial.print(data2);
-    }
-    Serial.println();
-}
-
-void Midi::receiveNoteOn(byte note, byte velocity) {
+NoteOn Midi::receiveNoteOn(byte note, byte velocity) {
 #if DEBUG
-    printMidiCommand("Note On", channel, note, velocity);
+    Serial.printf("Note On:\tChannel: %3d Note: %3d Velocity: %3d\n", channel, note, velocity);
     digitalWrite(DEBUG_PIN, LOW);
 #endif
-
+    return {channel, note, velocity};
 }
 
-void Midi::receiveNoteOff(byte note, byte velocity) {
+NoteOff Midi::receiveNoteOff(byte note, byte velocity) {
 #if DEBUG
-    printMidiCommand("Note Off", channel, note, velocity);
+    Serial.printf("Note Off:\tChannel: %3d Note: %3d Velocity: %3d\n", channel, note, velocity);
     digitalWrite(DEBUG_PIN, HIGH);
 #endif
-
+    return {channel, note, velocity};
 }
 
-void Midi::receivePressure(byte note, byte value) {
+Pressure Midi::receivePressure(byte note, byte value) {
 #if DEBUG
-    printMidiCommand("Pressure", channel, note, value);
+    Serial.printf("Pressure:\tChannel: %3d Note: %3d Value: %3d\n", channel, note, value);
 #endif
-
+    return {channel, note, value};
 }
 
-void Midi::receiveControlChange(byte control, byte value) {
+ControlChange Midi::receiveControlChange(byte control, byte value) {
 #if DEBUG
-    printMidiCommand("Control", channel, control, value);
+    Serial.printf("Control Change:\tChannel: %3d Control: %3d Value: %3d\n", channel, control, value);
 #endif
-
+    return {channel, control, value};
 }
 
-void Midi::receiveProgramChange(byte program) {
+ProgramChange Midi::receiveProgramChange(byte program) {
 #if DEBUG
-    printMidiCommand("Program", channel, program, 0);
+    Serial.printf("Program Change:\tChannel: %3d Program: %3d\n", channel, program);
 #endif
-
+    return {channel, program};
 }

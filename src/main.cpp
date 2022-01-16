@@ -20,5 +20,5 @@ void loop() {
         LEDControl::handleMidi(optMsg.value());
     }
 
-    // LEDControl::update();
+    LEDControl::update();
 }

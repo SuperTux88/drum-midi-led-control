@@ -1,7 +1,6 @@
 #include "LEDControl.h"
-#include "Pins.h"
 
-#include <Adafruit_NeoPixel.h>
+#include <NeoPixelBus.h>
 
 #include <map>
 
@@ -14,7 +13,7 @@
 
 #define LED_COUNT KICK_COUNT + SNARE_COUNT + TOM_COUNT * 3 + CRASH_COUNT * 2
 
-Adafruit_NeoPixel leds(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> leds(LED_COUNT);
 
 std::vector<Drum> order = {Drum::kick, Drum::tom3, Drum::crash2, Drum::tom2, Drum::tom1, Drum::crash1, Drum::snare};
 std::map<Drum, uint8_t> startIndex;
@@ -22,15 +21,14 @@ std::map<Drum, uint8_t> startIndex;
 byte program = DEFAULT_PROGRAM;
 byte hihatState = 0;
 
-uint16_t color = 65535 / 360 * 240;
+float color = 240;
 
 void LEDControl::setup() {
     initializeDrums();
 
-    pinMode(LED_PIN, OUTPUT);
-    leds.begin();
-    leds.fill(Adafruit_NeoPixel::ColorHSV(color, 255, 255), 0, LED_COUNT);
-    leds.show();
+    leds.Begin();
+    leds.ClearTo(HslColor(color / 360.0f, 1.0, 0.5));
+    leds.Show();
 }
 
 void LEDControl::handleMidi(std::variant<NoteOn, NoteOff, Pressure, ControlChange, ProgramChange> midiMsg) {
@@ -51,9 +49,12 @@ void LEDControl::handleMidi(std::variant<NoteOn, NoteOff, Pressure, ControlChang
 }
 
 void LEDControl::update() {
-    color = color + 1;
-    leds.fill(Adafruit_NeoPixel::ColorHSV(color, 255, 255), 0, LED_COUNT);
-    leds.show();
+    if (leds.CanShow()) {
+        color += 1;
+        if (color > 360) color -= 360;
+        leds.ClearTo(HslColor(color / 360.0f, 1.0, 0.5));
+        leds.Show();
+    }
 }
 
 void LEDControl::handleNoteOn(NoteOn note) {

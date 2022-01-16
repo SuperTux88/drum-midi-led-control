@@ -1,4 +1,5 @@
 #include "Midi.h"
+#include "Drum.h"
 #include "Pins.h"
 
 #include <SoftwareSerial.h>
@@ -65,7 +66,7 @@ std::optional<std::variant<NoteOn, NoteOff, Pressure, ControlChange, ProgramChan
 
 NoteOn Midi::receiveNoteOn(byte note, byte velocity) {
 #if DEBUG
-    Serial.printf("Note On:\tChannel: %3d Note: %3d Velocity: %3d\n", channel, note, velocity);
+    Serial.printf("Note On:\tChannel: %3d Note: %-18s Velocity: %3d\n", channel, Note::getText(note).c_str(), velocity);
     digitalWrite(DEBUG_PIN, LOW);
 #endif
     return {channel, note, velocity};
@@ -73,7 +74,7 @@ NoteOn Midi::receiveNoteOn(byte note, byte velocity) {
 
 NoteOff Midi::receiveNoteOff(byte note, byte velocity) {
 #if DEBUG
-    Serial.printf("Note Off:\tChannel: %3d Note: %3d Velocity: %3d\n", channel, note, velocity);
+    Serial.printf("Note Off:\tChannel: %3d Note: %-18s Velocity: %3d\n", channel, Note::getText(note).c_str(), velocity);
     digitalWrite(DEBUG_PIN, HIGH);
 #endif
     return {channel, note, velocity};
@@ -81,7 +82,7 @@ NoteOff Midi::receiveNoteOff(byte note, byte velocity) {
 
 Pressure Midi::receivePressure(byte note, byte value) {
 #if DEBUG
-    Serial.printf("Pressure:\tChannel: %3d Note: %3d Value: %3d\n", channel, note, value);
+    Serial.printf("Pressure:\tChannel: %3d Note: %-18s Value: %3d\n", channel, Note::getText(note).c_str(), value);
 #endif
     return {channel, note, value};
 }

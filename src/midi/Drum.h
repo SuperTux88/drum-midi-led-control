@@ -1,5 +1,9 @@
-#ifndef DRUM_MIDI_LED_CONTROL_DRUMNOTES_H
-#define DRUM_MIDI_LED_CONTROL_DRUMNOTES_H
+#ifndef DRUM_MIDI_LED_CONTROL_DRUM_H
+#define DRUM_MIDI_LED_CONTROL_DRUM_H
+
+#include <string>
+
+#include <Arduino.h>
 
 #define KICK 36
 
@@ -30,4 +34,14 @@
 #define CRASH2 57
 #define CRASH2_EDGE 52
 
-#endif //DRUM_MIDI_LED_CONTROL_DRUMNOTES_H
+enum Drum {
+    kick, snare, tom1, tom2, tom3, crash1, crash2, hihat, ride, unknown
+};
+
+class Note {
+public:
+    static Drum getDrum(byte note);
+    static std::string getText(byte note);
+};
+
+#endif //DRUM_MIDI_LED_CONTROL_DRUM_H

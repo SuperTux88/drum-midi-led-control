@@ -1,6 +1,8 @@
 #ifndef DRUM_MIDI_LED_CONTROL_LEDCONTROL_H
 #define DRUM_MIDI_LED_CONTROL_LEDCONTROL_H
 
+#include <NeoPixelBus.h>
+
 #include <variant>
 
 #include "midi/Drum.h"
@@ -19,8 +21,12 @@ private:
     static void handleControlChange(ControlChange controlChange);
     static void handleProgramChange(ProgramChange programChange);
 
-    static uint8_t getCountFor(Drum drum);
     static void initializeDrums();
+    static uint8_t getCountFor(Drum drum);
+    static NeoGrbFeature::ColorObject getBaseColorFor(Drum drum);
+    static void setDrumColor(NeoGrbFeature::ColorObject color, Drum drum);
+
+    static void rotateHue(float steps);
 };
 
 #endif //DRUM_MIDI_LED_CONTROL_LEDCONTROL_H

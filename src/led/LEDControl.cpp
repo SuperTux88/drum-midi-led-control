@@ -1,6 +1,6 @@
 #include "LEDControl.h"
 
-#include <NeoPixelBus.h>
+#include <NeoPixelAnimator.h>
 
 #include <map>
 
@@ -13,21 +13,25 @@
 
 #define LED_COUNT KICK_COUNT + SNARE_COUNT + TOM_COUNT * 3 + CRASH_COUNT * 2
 
-NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> leds(LED_COUNT);
-
 std::vector<Drum> order = {Drum::kick, Drum::tom3, Drum::crash2, Drum::tom2, Drum::tom1, Drum::crash1, Drum::snare};
 std::map<Drum, uint8_t> startIndex;
+
+NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> leds(LED_COUNT);
+NeoPixelAnimator animations(order.size() + 1);
+
+RgbColor white(255);
+RgbColor black(0);
 
 byte program = DEFAULT_PROGRAM;
 byte hihatState = 0;
 
-float color = 240;
+float currentHue = 240;
 
 void LEDControl::setup() {
     initializeDrums();
 
     leds.Begin();
-    leds.ClearTo(HslColor(color / 360.0f, 1.0, 0.5));
+    leds.ClearTo(HslColor(currentHue / 360.0f, 1.0, 0.5));
     leds.Show();
 }
 
@@ -50,16 +54,29 @@ void LEDControl::handleMidi(std::variant<NoteOn, NoteOff, Pressure, ControlChang
 
 void LEDControl::update() {
     if (leds.CanShow()) {
-        color += 1;
-        if (color > 360) color -= 360;
-        leds.ClearTo(HslColor(color / 360.0f, 1.0, 0.5));
+        rotateHue(0.1);
+        for (Drum drum: order) {
+            if (!animations.IsAnimationActive(drum)) {
+                setDrumColor(getBaseColorFor(drum), drum);
+            }
+        }
+        animations.UpdateAnimations();
         leds.Show();
     }
 }
 
 void LEDControl::handleNoteOn(NoteOn note) {
     Drum drumNote = Note::getDrum(note.note);
-    // TODO: leds.fill(Adafruit_NeoPixel::Color(255, 255, 255), startIndex[drumNote], getCountFor(drumNote));
+    if (std::find(order.begin(), order.end(), drumNote) != order.end()) {
+        AnimUpdateCallback animUpdate = [=](const AnimationParam &param) {
+            float progress = NeoEase::CubicOut(param.progress);
+            RgbColor updatedColor = RgbColor::LinearBlend(white, getBaseColorFor(drumNote), progress);
+            setDrumColor(updatedColor, drumNote);
+        };
+        animations.StartAnimation(drumNote, note.velocity * 15, animUpdate);
+    } else if (drumNote == hihat && hihatState < 45) {
+        rotateHue(40);
+    }
 }
 
 void LEDControl::handleNoteOff(__attribute__((unused)) NoteOff note) {
@@ -80,9 +97,17 @@ void LEDControl::handleProgramChange(ProgramChange programChange) {
     program = programChange.program;
 }
 
+void LEDControl::initializeDrums() {
+    uint8_t currentIndex = 0;
+    for (Drum current: order) {
+        startIndex.insert({current, currentIndex});
+        currentIndex += getCountFor(current);
+    }
+}
+
 uint8_t LEDControl::getCountFor(Drum drum) {
     switch (drum) {
-        case Drum::kick:
+        case kick:
             return KICK_COUNT;
         case snare:
             return SNARE_COUNT;
@@ -98,10 +123,26 @@ uint8_t LEDControl::getCountFor(Drum drum) {
     }
 }
 
-void LEDControl::initializeDrums() {
-    uint8_t currentIndex = 0;
-    for (Drum current: order) {
-        startIndex.insert({current, currentIndex});
-        currentIndex += getCountFor(current);
+NeoGrbFeature::ColorObject LEDControl::getBaseColorFor(Drum drum) {
+    switch (drum) {
+        case kick:
+        case snare:
+        case tom1:
+        case tom2:
+        case tom3:
+            return HslColor(currentHue / 360.0f, 1.0, 0.5);
+        case crash1:
+        case crash2:
+        default:
+            return black;
     }
+}
+
+void LEDControl::setDrumColor(NeoGrbFeature::ColorObject color, Drum drum) {
+    leds.ClearTo(color, startIndex[drum], startIndex[drum] + getCountFor(drum) - 1);
+}
+
+void LEDControl::rotateHue(float steps) {
+    currentHue += steps;
+    while (currentHue > 360) currentHue -= 360;
 }

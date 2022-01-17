@@ -13,7 +13,7 @@
 
 #define LED_COUNT KICK_COUNT + SNARE_COUNT + TOM_COUNT * 3 + CRASH_COUNT * 2
 
-std::vector<Drum> order = {Drum::kick, Drum::tom3, Drum::crash2, Drum::tom2, Drum::tom1, Drum::crash1, Drum::snare};
+std::vector<Drum> order = {kick, tom3, crash2, tom2, tom1, crash1, snare};
 std::map<Drum, uint8_t> startIndex;
 
 NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> leds(LED_COUNT);
@@ -72,7 +72,7 @@ void LEDControl::handleNoteOn(NoteOn note) {
             float progress = NeoEase::CubicOut(param.progress);
             setDrumColor(drumNote, RgbColor::LinearBlend(white, getBaseColorFor(drumNote), progress));
         };
-        animations.StartAnimation(drumNote, note.velocity * 15, animUpdate);
+        animations.StartAnimation(drumNote, note.velocity * getAnimationMultiplierFor(drumNote), animUpdate);
     } else if (drumNote == hihat && hihatState < 45) {
         rotateHue(40);
     }
@@ -166,6 +166,22 @@ NeoGrbFeature::ColorObject LEDControl::getBaseColorFor(Drum drum) {
     }
 }
 
+uint8_t LEDControl::getAnimationMultiplierFor(Drum drum) {
+    switch (drum) {
+        case kick:
+        case snare:
+        case tom1:
+        case tom2:
+        case tom3:
+            return 15;
+        case crash1:
+        case crash2:
+            return 30;
+        default:
+            return 0;
+    }
+}
+
 void LEDControl::setDrumColor(Drum drum, NeoGrbFeature::ColorObject color) {
     leds.ClearTo(color, startIndex[drum], startIndex[drum] + getCountFor(drum) - 1);
 }
@@ -177,7 +193,6 @@ void LEDControl::rotateLeft(Drum drum, uint16_t count) {
 void LEDControl::rotateRight(Drum drum, uint16_t count) {
     leds.RotateRight(count, startIndex[drum], startIndex[drum] + getCountFor(drum) - 1);
 }
-
 
 void LEDControl::rotateHue(float steps) {
     currentHue += steps;

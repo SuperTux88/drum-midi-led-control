@@ -23,8 +23,11 @@ private:
 
     static void initializeDrums();
     static uint8_t getCountFor(Drum drum);
+    static uint8_t getInsertOffsetFor(Drum drum);
     static NeoGrbFeature::ColorObject getBaseColorFor(Drum drum);
-    static void setDrumColor(NeoGrbFeature::ColorObject color, Drum drum);
+    static void setDrumColor(Drum drum, NeoGrbFeature::ColorObject color);
+    static void rotateLeft(Drum drum, uint16_t count = 1);
+    static void rotateRight(Drum drum, uint16_t count = 1);
 
     static void rotateHue(float steps);
 };

@@ -25,14 +25,14 @@ RgbColor black(0);
 byte program = DEFAULT_PROGRAM;
 byte hihatState = 0;
 
-float currentHue = 240;
+float currentHue = 120;
 
 void LEDControl::setup() {
-    initializeDrums();
-
     leds.Begin();
-    leds.ClearTo(HslColor(currentHue / 360.0f, 1.0, 0.5));
+    leds.ClearTo(black);
     leds.Show();
+
+    initializeDrums();
 }
 
 void LEDControl::handleMidi(std::variant<NoteOn, NoteOff, Pressure, ControlChange, ProgramChange> midiMsg) {
@@ -57,7 +57,7 @@ void LEDControl::update() {
         rotateHue(0.1);
         for (Drum drum: order) {
             if (!animations.IsAnimationActive(drum)) {
-                setDrumColor(getBaseColorFor(drum), drum);
+                setDrumColor(drum, getBaseColorFor(drum));
             }
         }
         animations.UpdateAnimations();
@@ -70,8 +70,7 @@ void LEDControl::handleNoteOn(NoteOn note) {
     if (std::find(order.begin(), order.end(), drumNote) != order.end()) {
         AnimUpdateCallback animUpdate = [=](const AnimationParam &param) {
             float progress = NeoEase::CubicOut(param.progress);
-            RgbColor updatedColor = RgbColor::LinearBlend(white, getBaseColorFor(drumNote), progress);
-            setDrumColor(updatedColor, drumNote);
+            setDrumColor(drumNote, RgbColor::LinearBlend(white, getBaseColorFor(drumNote), progress));
         };
         animations.StartAnimation(drumNote, note.velocity * 15, animUpdate);
     } else if (drumNote == hihat && hihatState < 45) {
@@ -99,9 +98,31 @@ void LEDControl::handleProgramChange(ProgramChange programChange) {
 
 void LEDControl::initializeDrums() {
     uint8_t currentIndex = 0;
-    for (Drum current: order) {
-        startIndex.insert({current, currentIndex});
-        currentIndex += getCountFor(current);
+    for (Drum currentDrum: order) {
+        startIndex.insert({currentDrum, currentIndex});
+        uint8_t count = getCountFor(currentDrum);
+        currentIndex += count;
+
+        // start animation for drums with color :)
+        if (getBaseColorFor(currentDrum) != black) {
+            AnimUpdateCallback animUpdate = [=](const AnimationParam &param) {
+                uint8_t animationCount = count;
+                if (param.progress < 0.8) {
+                    animationCount = (uint8_t) (param.progress * 1.25 * (float) count);
+                    setDrumColor(currentDrum, black);
+                }
+                for (uint8_t i = 0; i < animationCount; i++) {
+                    auto pixelColor = HslColor(360.0f / (float) count * (float) i / 360.0f, 1.0, 0.5);
+                    if (param.progress > 0.8) {
+                        float progress = (param.progress - 0.8f) * 5;
+                        pixelColor = RgbColor::LinearBlend(pixelColor, getBaseColorFor(currentDrum), progress);
+                    }
+                    leds.SetPixelColor(currentIndex - 1 - i, pixelColor);
+                }
+                rotateLeft(currentDrum, getInsertOffsetFor(currentDrum));
+            };
+            animations.StartAnimation(currentDrum, 4000, animUpdate);
+        }
     }
 }
 
@@ -123,6 +144,15 @@ uint8_t LEDControl::getCountFor(Drum drum) {
     }
 }
 
+uint8_t LEDControl::getInsertOffsetFor(Drum drum) {
+    switch (drum) {
+        case snare:
+            return SNARE_COUNT / 2;
+        default:
+            return 0;
+    }
+}
+
 NeoGrbFeature::ColorObject LEDControl::getBaseColorFor(Drum drum) {
     switch (drum) {
         case kick:
@@ -131,16 +161,23 @@ NeoGrbFeature::ColorObject LEDControl::getBaseColorFor(Drum drum) {
         case tom2:
         case tom3:
             return HslColor(currentHue / 360.0f, 1.0, 0.5);
-        case crash1:
-        case crash2:
         default:
             return black;
     }
 }
 
-void LEDControl::setDrumColor(NeoGrbFeature::ColorObject color, Drum drum) {
+void LEDControl::setDrumColor(Drum drum, NeoGrbFeature::ColorObject color) {
     leds.ClearTo(color, startIndex[drum], startIndex[drum] + getCountFor(drum) - 1);
 }
+
+void LEDControl::rotateLeft(Drum drum, uint16_t count) {
+    leds.RotateLeft(count, startIndex[drum], startIndex[drum] + getCountFor(drum) - 1);
+}
+
+void LEDControl::rotateRight(Drum drum, uint16_t count) {
+    leds.RotateRight(count, startIndex[drum], startIndex[drum] + getCountFor(drum) - 1);
+}
+
 
 void LEDControl::rotateHue(float steps) {
     currentHue += steps;

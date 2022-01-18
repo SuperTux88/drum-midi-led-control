@@ -71,10 +71,11 @@ void LEDControl::handleNoteOn(NoteOn note) {
     if (std::find(order.begin(), order.end(), drumNote) != order.end()) {
         AnimUpdateCallback animUpdate = [=](const AnimationParam &param) {
             float progress = NeoEase::CubicOut(param.progress);
-            setDrumColor(drumNote, RgbColor::LinearBlend(white, getBaseColorFor(drumNote), progress));
+            setDrumColor(drumNote,
+                         RgbColor::LinearBlend(getHighlightColorFor(drumNote), getBaseColorFor(drumNote), progress));
         };
         animations.StartAnimation(drumNote, note.velocity * getAnimationMultiplierFor(drumNote), animUpdate);
-    } else if (drumNote == hihat && hihatState < 45) {
+    } else if (drumNote == hihat && hihatState < 75) {
         rotateHue(40);
     }
 }
@@ -108,21 +109,22 @@ void LEDControl::initializeDrums() {
         if (getBaseColorFor(currentDrum) != black) {
             AnimUpdateCallback animUpdate = [=](const AnimationParam &param) {
                 uint8_t animationCount = count;
-                if (param.progress < 0.8) {
-                    animationCount = (uint8_t) (param.progress * 1.25 * (float) count);
+                if (param.progress < 0.5) {
+                    animationCount = (uint8_t) (param.progress * 2 * (float) count);
                     setDrumColor(currentDrum, black);
                 }
                 for (uint8_t i = 0; i < animationCount; i++) {
                     auto pixelColor = HslColor(360.0f / (float) count * (float) i / 360.0f, 1.0, 0.5);
-                    if (param.progress > 0.8) {
-                        float progress = (param.progress - 0.8f) * 5;
-                        pixelColor = RgbColor::LinearBlend(pixelColor, getBaseColorFor(currentDrum), progress);
+                    if (param.progress > 0.5) {
+                        float progress = (param.progress - 0.5f) * 2;
+                        pixelColor = HslColor::LinearBlend<NeoHueBlendCounterClockwiseDirection>(
+                                pixelColor, getBaseColorFor(currentDrum), progress);
                     }
                     setDrumPixelColor(currentDrum, (int16_t) (-1 - i), pixelColor);
                 }
                 rotateLeft(currentDrum, getInsertOffsetFor(currentDrum));
             };
-            animations.StartAnimation(currentDrum, 4000, animUpdate);
+            animations.StartAnimation(currentDrum, 3000, animUpdate);
         }
     }
 }
@@ -158,12 +160,24 @@ NeoGrbFeature::ColorObject LEDControl::getBaseColorFor(Drum drum) {
     switch (drum) {
         case kick:
         case snare:
+            return HslColor(currentHue / 360.0f, 1.0, 0.35);
         case tom1:
         case tom2:
         case tom3:
-            return HslColor(currentHue / 360.0f, 1.0, 0.5);
+            return HslColor(currentHue / 360.0f, 1.0, 0.2);
         default:
             return black;
+    }
+}
+
+NeoGrbFeature::ColorObject LEDControl::getHighlightColorFor(Drum drum) {
+    switch (drum) {
+        case tom1:
+        case tom2:
+        case tom3:
+            return HslColor(currentHue / 360.0f, 1.0, 0.8);
+        default:
+            return white;
     }
 }
 
@@ -174,10 +188,10 @@ uint8_t LEDControl::getAnimationMultiplierFor(Drum drum) {
         case tom1:
         case tom2:
         case tom3:
-            return 15;
+            return 10;
         case crash1:
         case crash2:
-            return 30;
+            return 20;
         default:
             return 0;
     }

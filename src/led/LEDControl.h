@@ -27,6 +27,7 @@ private:
     static uint8_t getAnimationMultiplierFor(Drum drum);
     static NeoGrbFeature::ColorObject getBaseColorFor(Drum drum);
     static void setDrumColor(Drum drum, NeoGrbFeature::ColorObject color);
+    static void setDrumPixelColor(Drum drum, int16_t index, NeoGrbFeature::ColorObject color);
     static void rotateLeft(Drum drum, uint16_t count = 1);
     static void rotateRight(Drum drum, uint16_t count = 1);
 

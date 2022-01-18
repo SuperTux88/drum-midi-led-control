@@ -18,6 +18,7 @@ std::map<Drum, uint8_t> startIndex;
 
 NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> leds(LED_COUNT);
 NeoPixelAnimator animations(order.size() + 1);
+NeoGamma<NeoGammaTableMethod> colorGamma;
 
 RgbColor white(255);
 RgbColor black(0);
@@ -117,7 +118,7 @@ void LEDControl::initializeDrums() {
                         float progress = (param.progress - 0.8f) * 5;
                         pixelColor = RgbColor::LinearBlend(pixelColor, getBaseColorFor(currentDrum), progress);
                     }
-                    leds.SetPixelColor(currentIndex - 1 - i, pixelColor);
+                    setDrumPixelColor(currentDrum, (int16_t) (-1 - i), pixelColor);
                 }
                 rotateLeft(currentDrum, getInsertOffsetFor(currentDrum));
             };
@@ -183,7 +184,15 @@ uint8_t LEDControl::getAnimationMultiplierFor(Drum drum) {
 }
 
 void LEDControl::setDrumColor(Drum drum, NeoGrbFeature::ColorObject color) {
-    leds.ClearTo(color, startIndex[drum], startIndex[drum] + getCountFor(drum) - 1);
+    leds.ClearTo(colorGamma.Correct(color), startIndex[drum], startIndex[drum] + getCountFor(drum) - 1);
+}
+
+void LEDControl::setDrumPixelColor(Drum drum, int16_t index, NeoGrbFeature::ColorObject color) {
+    uint16_t indexPixel = (unsigned) startIndex[drum] + index;
+    if (index < 0) {
+        indexPixel += getCountFor(drum);
+    }
+    leds.SetPixelColor(indexPixel, colorGamma.Correct(color));
 }
 
 void LEDControl::rotateLeft(Drum drum, uint16_t count) {

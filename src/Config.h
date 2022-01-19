@@ -1,0 +1,9 @@
+#ifndef DRUM_MIDI_LED_CONTROL_CONFIG_H
+#define DRUM_MIDI_LED_CONTROL_CONFIG_H
+
+#define MIDI_PIN 4
+
+#define DEBUG true
+#define DEBUG_PIN 2 // onboard LED
+
+#endif //DRUM_MIDI_LED_CONTROL_CONFIG_H

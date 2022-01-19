@@ -1,4 +1,5 @@
 #include "LEDControl.h"
+#include "Config.h"
 
 #include <NeoPixelAnimator.h>
 
@@ -15,6 +16,10 @@
 
 std::vector<Drum> order = {kick, tom3, crash2, tom2, tom1, crash1, snare};
 std::map<Drum, uint8_t> startIndex;
+
+std::map<Drum, unsigned long> lastHit;
+std::map<Drum, byte> lastNote;
+std::map<Drum, byte> lastVelocity;
 
 NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> leds(LED_COUNT);
 NeoPixelAnimator animations(order.size() + 1);
@@ -69,6 +74,18 @@ void LEDControl::update() {
 void LEDControl::handleNoteOn(NoteOn note) {
     Drum drumNote = Note::getDrum(note.note);
     if (std::find(order.begin(), order.end(), drumNote) != order.end()) {
+        if (millis() - lastHit[drumNote] < 500 && lastNote[drumNote] != note.note &&
+            note.velocity < 10 && lastVelocity[drumNote] - note.velocity > 10) {
+#if DEBUG
+            Serial.printf("Ignore ghost trigger for %s: %lums\n", Note::getText(note.note).c_str(),
+                          millis() - lastHit[drumNote]);
+#endif
+            return; // ignore ghost double trigger
+        }
+        lastHit[drumNote] = millis();
+        lastNote[drumNote] = note.note;
+        lastVelocity[drumNote] = note.velocity;
+
         AnimUpdateCallback animUpdate = [=](const AnimationParam &param) {
             float progress = NeoEase::CubicOut(param.progress);
             setDrumColor(drumNote,
@@ -101,7 +118,11 @@ void LEDControl::handleProgramChange(ProgramChange programChange) {
 void LEDControl::initializeDrums() {
     uint8_t currentIndex = 0;
     for (Drum currentDrum: order) {
-        startIndex.insert({currentDrum, currentIndex});
+        startIndex[currentDrum] = currentIndex;
+        lastHit[currentDrum] = 0;
+        lastNote[currentDrum] = 0;
+        lastVelocity[currentDrum] = 0;
+
         uint8_t count = getCountFor(currentDrum);
         currentIndex += count;
 

@@ -1,10 +1,8 @@
 #include "Midi.h"
 #include "Drum.h"
-#include "Pins.h"
+#include "Config.h"
 
 #include <SoftwareSerial.h>
-
-#define DEBUG true
 
 SoftwareSerial midiSerial(MIDI_PIN);
 

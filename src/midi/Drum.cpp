@@ -38,7 +38,7 @@ Drum Note::getDrum(byte note) {
     }
 }
 
-std::string Note::getText(byte note) {
+std::string Note::getDrumText(byte note) {
     switch (note) {
         case KICK:         return "Kick";
         case SNARE:        return "Snare";
@@ -63,6 +63,27 @@ std::string Note::getText(byte note) {
         default:
             std::ostringstream unknown;
             unknown << "Unknown: " << std::to_string((unsigned) note);
+            return unknown.str();
+    }
+}
+
+Drum Note::getControl(byte control) {
+    switch (control) {
+        case SNARE_CONTROL: return Drum::snare;
+        case HIHAT_CONTROL: return Drum::hihat;
+        case RIDE_CONTROL:  return Drum::ride;
+        default:            return Drum::unknown;
+    }
+}
+
+std::string Note::getControlText(byte control) {
+    switch (control) {
+        case SNARE_CONTROL: return "Snare Control";
+        case HIHAT_CONTROL: return "Hi-Hat Control";
+        case RIDE_CONTROL:  return "Ride Control";
+        default:
+            std::ostringstream unknown;
+            unknown << "Unknown: " << std::to_string((unsigned) control);
             return unknown.str();
     }
 }

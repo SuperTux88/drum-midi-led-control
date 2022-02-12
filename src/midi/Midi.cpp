@@ -64,7 +64,8 @@ std::optional<std::variant<NoteOn, NoteOff, Pressure, ControlChange, ProgramChan
 
 NoteOn Midi::receiveNoteOn(byte note, byte velocity) {
 #if DEBUG
-    Serial.printf("Note On:\tChannel: %3d Note: %-18s Velocity: %3d\n", channel, Note::getText(note).c_str(), velocity);
+    Serial.printf("Note On:         Channel: %3d  Note: %-18s  Velocity: %3d  Millis: %10lu\n",
+                  channel, Note::getDrumText(note).c_str(), velocity, millis());
     digitalWrite(DEBUG_PIN, LOW);
 #endif
     return {channel, note, velocity};
@@ -72,7 +73,8 @@ NoteOn Midi::receiveNoteOn(byte note, byte velocity) {
 
 NoteOff Midi::receiveNoteOff(byte note, byte velocity) {
 #if DEBUG
-    Serial.printf("Note Off:\tChannel: %3d Note: %-18s Velocity: %3d\n", channel, Note::getText(note).c_str(), velocity);
+    Serial.printf("Note Off:        Channel: %3d  Note: %-18s  Velocity: %3d  Millis: %10lu\n",
+                  channel, Note::getDrumText(note).c_str(), velocity, millis());
     digitalWrite(DEBUG_PIN, HIGH);
 #endif
     return {channel, note, velocity};
@@ -80,21 +82,23 @@ NoteOff Midi::receiveNoteOff(byte note, byte velocity) {
 
 Pressure Midi::receivePressure(byte note, byte value) {
 #if DEBUG
-    Serial.printf("Pressure:\tChannel: %3d Note: %-18s Value: %3d\n", channel, Note::getText(note).c_str(), value);
+    Serial.printf("Pressure:        Channel: %3d  Note: %-18s  Value:    %3d  Millis: %10lu\n",
+                  channel, Note::getDrumText(note).c_str(), value, millis());
 #endif
     return {channel, note, value};
 }
 
 ControlChange Midi::receiveControlChange(byte control, byte value) {
 #if DEBUG
-    Serial.printf("Control Change:\tChannel: %3d Control: %3d Value: %3d\n", channel, control, value);
+    Serial.printf("Control Change:  Channel: %3d  Control: %-15s  Value:    %3d  Millis: %10lu\n",
+                  channel, Note::getControlText(control).c_str(), value, millis());
 #endif
     return {channel, control, value};
 }
 
 ProgramChange Midi::receiveProgramChange(byte program) {
 #if DEBUG
-    Serial.printf("Program Change:\tChannel: %3d Program: %3d\n", channel, program);
+    Serial.printf("Program Change:  Channel: %3d  Program: %3d\n", channel, program);
 #endif
     return {channel, program};
 }

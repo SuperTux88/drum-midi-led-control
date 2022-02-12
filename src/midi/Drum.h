@@ -27,7 +27,7 @@
 #define RIDE 51
 #define RIDE_EDGE 59
 #define RIDE_BELL 53
-#define RIDE_CONTROL 16
+#define RIDE_CONTROL 17
 
 #define CRASH1 49
 #define CRASH1_EDGE 55
@@ -41,7 +41,9 @@ enum Drum {
 class Note {
 public:
     static Drum getDrum(byte note);
-    static std::string getText(byte note);
+    static std::string getDrumText(byte note);
+    static Drum getControl(byte note);
+    static std::string getControlText(byte note);
 };
 
 #endif //DRUM_MIDI_LED_CONTROL_DRUM_H

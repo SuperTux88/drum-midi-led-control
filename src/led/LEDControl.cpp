@@ -77,7 +77,7 @@ void LEDControl::handleNoteOn(NoteOn note) {
         if (millis() - lastHit[drumNote] < 500 && lastNote[drumNote] != note.note &&
             note.velocity < 10 && lastVelocity[drumNote] - note.velocity > 10) {
 #if DEBUG
-            Serial.printf("Ignore ghost trigger for %s: %lums\n", Note::getText(note.note).c_str(),
+            Serial.printf("Ignore ghost trigger for %s: %lums\n", Note::getDrumText(note.note).c_str(),
                           millis() - lastHit[drumNote]);
 #endif
             return; // ignore ghost double trigger
@@ -106,7 +106,8 @@ void LEDControl::handlePressure(__attribute__((unused)) Pressure note) {
 }
 
 void LEDControl::handleControlChange(ControlChange controlChange) {
-    if (controlChange.control == HIHAT_CONTROL) {
+    Drum drumNote = Note::getControl(controlChange.control);
+    if (drumNote == hihat) {
         hihatState = controlChange.value;
     }
 }

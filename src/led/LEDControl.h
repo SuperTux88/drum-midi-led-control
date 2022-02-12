@@ -23,6 +23,7 @@ private:
 
     // Drum methods
     static void initializeDrums();
+    static boolean handleDebounce(NoteOn note);
 
     // LED methods
     static void playStartAnimation(Drum drum);

@@ -18,6 +18,7 @@ std::vector<Drum> order = {kick, tom3, crash2, tom2, tom1, crash1, snare};
 std::map<Drum, uint8_t> startIndex;
 
 std::map<Drum, unsigned long> lastHit;
+std::map<Drum, unsigned long> lastOff;
 std::map<Drum, byte> lastNote;
 std::map<Drum, byte> lastVelocity;
 
@@ -74,14 +75,8 @@ void LEDControl::update() {
 void LEDControl::handleNoteOn(NoteOn note) {
     Drum drumNote = Note::getDrum(note.note);
     if (std::find(order.begin(), order.end(), drumNote) != order.end()) {
-        if (millis() - lastHit[drumNote] < 500 && lastNote[drumNote] != note.note &&
-            note.velocity < 10 && lastVelocity[drumNote] - note.velocity > 10) {
-#if DEBUG
-            Serial.printf("Ignore ghost trigger for %s: %lums\n", Note::getDrumText(note.note).c_str(),
-                          millis() - lastHit[drumNote]);
-#endif
-            return; // ignore ghost double trigger
-        }
+        if (handleDebounce(note)) return;
+
         lastHit[drumNote] = millis();
         lastNote[drumNote] = note.note;
         lastVelocity[drumNote] = note.velocity;
@@ -97,8 +92,9 @@ void LEDControl::handleNoteOn(NoteOn note) {
     }
 }
 
-void LEDControl::handleNoteOff(__attribute__((unused)) NoteOff note) {
-    // ignore note off, not relevant
+void LEDControl::handleNoteOff(NoteOff note) {
+    Drum drumNote = Note::getDrum(note.note);
+    lastOff[drumNote] = millis();
 }
 
 void LEDControl::handlePressure(__attribute__((unused)) Pressure note) {
@@ -128,6 +124,32 @@ void LEDControl::initializeDrums() {
 
         playStartAnimation(currentDrum);
     }
+}
+
+boolean LEDControl::handleDebounce(NoteOn note) {
+    Drum drumNote = Note::getDrum(note.note);
+    // handle double kick trigger
+    if (drumNote == kick && millis() - lastOff[kick] < 50 && note.velocity <= 25 &&
+        note.velocity <= lastVelocity[kick] / 2) {
+
+#if DEBUG
+        Serial.printf("Ignore double kick for %d/%d: %lums/%lums\n", lastVelocity[drumNote], note.velocity,
+                      millis() - lastHit[drumNote], millis() - lastOff[drumNote]);
+#endif
+        return true; // ignore ghost double trigger
+    }
+    // sometimes there is a second crash trigger on a different note
+    else if (millis() - lastHit[drumNote] < 500 && lastNote[drumNote] != note.note &&
+             note.velocity < 15 && lastVelocity[drumNote] - note.velocity > 10) {
+#if DEBUG
+        Serial.printf("Ignore ghost trigger for %s/%d: %lums\n", Note::getDrumText(note.note).c_str(),
+                      note.velocity, millis() - lastHit[drumNote]);
+#endif
+        return true; // ignore ghost double trigger
+    }
+
+
+    return false; // no debounce
 }
 
 void LEDControl::playStartAnimation(Drum drum) {

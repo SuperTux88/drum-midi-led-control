@@ -21,7 +21,11 @@ private:
     static void handleControlChange(ControlChange controlChange);
     static void handleProgramChange(ProgramChange programChange);
 
+    // Drum methods
     static void initializeDrums();
+
+    // LED methods
+    static void playStartAnimation(Drum drum);
     static uint8_t getCountFor(Drum drum);
     static uint8_t getInsertOffsetFor(Drum drum);
     static uint8_t getAnimationMultiplierFor(Drum drum);
@@ -31,7 +35,6 @@ private:
     static void setDrumPixelColor(Drum drum, int16_t index, NeoGrbFeature::ColorObject color);
     static void rotateLeft(Drum drum, uint16_t count = 1);
     static void rotateRight(Drum drum, uint16_t count = 1);
-
     static void rotateHue(float steps);
 };
 

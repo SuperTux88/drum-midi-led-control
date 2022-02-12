@@ -124,31 +124,35 @@ void LEDControl::initializeDrums() {
         lastNote[currentDrum] = 0;
         lastVelocity[currentDrum] = 0;
 
-        uint8_t count = getCountFor(currentDrum);
-        currentIndex += count;
+        currentIndex += getCountFor(currentDrum);
 
-        // start animation for drums with color :)
-        if (getBaseColorFor(currentDrum) != black) {
-            AnimUpdateCallback animUpdate = [=](const AnimationParam &param) {
-                uint8_t animationCount = count;
-                if (param.progress < 0.5) {
-                    animationCount = (uint8_t) (param.progress * 2 * (float) count);
-                    setDrumColor(currentDrum, black);
-                }
-                for (uint8_t i = 0; i < animationCount; i++) {
-                    auto pixelColor = HslColor(360.0f / (float) count * (float) i / 360.0f, 1.0, 0.5);
-                    if (param.progress > 0.5) {
-                        float progress = (param.progress - 0.5f) * 2;
-                        pixelColor = HslColor::LinearBlend<NeoHueBlendCounterClockwiseDirection>(
-                                pixelColor, getBaseColorFor(currentDrum), progress);
-                    }
-                    setDrumPixelColor(currentDrum, (int16_t) (-1 - i), pixelColor);
-                }
-                rotateLeft(currentDrum, getInsertOffsetFor(currentDrum));
-            };
-            animations.StartAnimation(currentDrum, 3000, animUpdate);
-        }
+        playStartAnimation(currentDrum);
     }
+}
+
+void LEDControl::playStartAnimation(Drum drum) {
+    // only play start animation for drums with color :)
+    if (getBaseColorFor(drum) == black) return;
+
+    uint8_t count = getCountFor(drum);
+    AnimUpdateCallback animUpdate = [=](const AnimationParam &param) {
+        uint8_t animationCount = count;
+        if (param.progress < 0.5) {
+            animationCount = (uint8_t) (param.progress * 2 * (float) count);
+            setDrumColor(drum, black);
+        }
+        for (uint8_t i = 0; i < animationCount; i++) {
+            auto pixelColor = HslColor(360.0f / (float) count * (float) i / 360.0f, 1.0, 0.5);
+            if (param.progress > 0.5) {
+                float progress = (param.progress - 0.5f) * 2;
+                pixelColor = HslColor::LinearBlend<NeoHueBlendCounterClockwiseDirection>(
+                        pixelColor, getBaseColorFor(drum), progress);
+            }
+            setDrumPixelColor(drum, (int16_t) (-1 - i), pixelColor);
+        }
+        rotateLeft(drum, getInsertOffsetFor(drum));
+    };
+    animations.StartAnimation(drum, 3000, animUpdate);
 }
 
 uint8_t LEDControl::getCountFor(Drum drum) {
